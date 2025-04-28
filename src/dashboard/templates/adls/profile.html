@@ -1,0 +1,430 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 custom_tags static i18n %}
+
+{% block extracss %}
+    {{ block.super }}
+    <link href="{% static 'css/modal_aside.css' %}" rel="stylesheet">
+    <link href="{% static 'plugins/openlayers/ol.css' %}" rel="stylesheet">
+{% endblock extracss %}
+
+{% block content %}
+    {% with adl.representative as profile %}
+        <div class="row">
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="text-center">
+                                    {% if profile.photo %}
+                                        <img id="photo" src="{{ profile.photo }}" class="profile-user-img"
+                                             alt="User profile picture">
+                                    {% else %}
+                                        <img id="photo" src="{% static 'images/default-avatar.jpg' %}"
+                                             class="profile-user-img" alt="User profile picture">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-8">
+                                {% translate 'Facilitator not assigned' as not_assigned %}
+                                <div class="profile-header">
+                                    <span {% if not profile %}class="text-warning"{% endif %} id="name">
+                                        {{ profile.name|default:not_assigned }}
+                                    </span>
+                                    <button id="edit_profile" class="btn float-right p-0
+                                            {% if profile %}text-primary{% else %}text-muted{% endif %}"
+                                            {% if not profile %}disabled{% endif %}>
+                                        <i class="fas fa-edit fs17"></i>
+                                    </button>
+                                </div>
+                                <span class="text-muted fs17">{% translate 'Administrative Level' %}:</span>
+                                <span class="text-bold-family fs17">
+                                    {% if adl.name %}
+                                        {{ adl.name }}
+                                    {% else %}
+                                        {% translate 'No administrative level assigned' %}
+                                    {% endif %}
+                                </span>
+                                <p class="mt-2 lh14 text-gray-light">
+                                    {% translate 'Tel' %}: <span id="phone">{{ profile.phone }}</span>
+                                    <br>
+                                    {% translate 'Email' %}: <span id="email">{{ profile.email }}</span>
+                                </p>
+                                <div class="text-right">
+                                    {% if profile.is_active %}
+                                        <button class="btn btn-xs btn-danger" data-toggle="modal"
+                                                data-target="#confirmToggleStatusModal">
+                                            {% translate 'Deactivate Account' %}
+                                        </button>
+                                    {% else %}
+                                        <form action="{% url 'dashboard:adls:toggle_status' adl|get:'_id' %}"
+                                              id='enter-issue-form' method="post">{% csrf_token %}
+                                            <button class="btn btn-xs btn-primary">
+                                                {% if not profile %}disabled{% endif %}
+                                                {% translate 'Activate Account' %}
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5 display-flex flex-flow-column">
+                <div class="card">
+                    <div class="card-body">
+                        <span class="text-bold-family fs17">{% translate 'Last Activity' %}:</span>
+                        <span class="text-muted fs17">{{ profile.last_active }}</span>
+                    </div>
+                </div>
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="text-bold-family fs17">{% translate 'Facilitator Code' %}</div>
+                        <div class="adl-code mt-3" id="adl_code">{% get_code profile.email %}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 nav-profile-buttons">
+                <ul class="nav nav-pills row mt-1">
+{#                    <li class="nav-item col-sm-3">#}
+{#                        <a class="btn btn-default nav-link active p-budget" href="#p-budget"#}
+{#                           data-toggle="tab">#}
+{#                            <div class="row height60">#}
+{#                                <div class="col-9 text-profile-button">#}
+{#                                    {% translate 'Participatory Budget' %}#}
+{#                                </div>#}
+{#                                <div class="col-3">#}
+{#                                    <div class="circle-icon chevron-circle">#}
+{#                                        <div class="center-27">#}
+{#                                            <i class="fas fa-chevron-down"></i>#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </a>#}
+{#                    </li>#}
+                    <li class="nav-item col-sm-4">
+                        <a class="btn btn-default nav-link active mgr" href="#mgr" data-toggle="tab">
+                            <div class="row height60">
+                                <div class="col-9 text-profile-button">
+                                    {% translate 'GRM' %}
+                                </div>
+                                <div class="col-3">
+                                    <div class="circle-icon chevron-circle">
+                                        <div class="center-27">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    <li class="nav-item col-sm-4">
+                        <a class="btn btn-default nav-link p-monitoring" href="#p-monitoring" data-toggle="tab">
+                            <div class="row height60">
+                                <div class="col-9 text-profile-button">
+                                    {% translate 'Participatory monitoring' %}
+                                </div>
+                                <div class="col-3">
+                                    <div class="circle-icon chevron-circle">
+                                        <div class="center-27">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    <li class="nav-item col-sm-4">
+                        <a class="btn btn-default nav-link p-diagnostics" href="#p-diagnostics" data-toggle="tab">
+                            <div class="row height60">
+                                <div class="col-9 text-profile-button">
+                                    {% translate 'Participatory diagnostics' %}
+                                </div>
+                                <div class="col-3">
+                                    <div class="circle-icon chevron-circle">
+                                        <div class="center-27">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                </ul>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="tab-content">
+{#                            <div class="tab-pane active nav" id="p-budget">#}
+{#                                {% for phase in adl.phases %}#}
+{#                                    <div class="card-item" data-toggle="modal"#}
+{#                                         data-target="#detailModal{{ phase.ordinal }}">#}
+{#                                        <div class="row">#}
+{#                                            <div class="col-sm-8">#}
+{#                                                <div class="badge-ordinal">#}
+{#                                                    {{ phase.ordinal }}#}
+{#                                                </div>#}
+{#                                                <span class="phase-title">#}
+{#                                                    {{ phase.title }}#}
+{#                                                </span>#}
+{#                                            </div>#}
+{#                                            <div class="col-sm-4 text-right">#}
+{#                                                {% get_status_phase phase.tasks as status_phase %}#}
+{#                                                <div class="status-badge badge-{{ status_phase }}">#}
+{#                                                    {% if status_phase == 'completed' %}#}
+{#                                                        {% translate 'Completed' %}#}
+{#                                                    {% elif status_phase == 'in-progress' %}#}
+{#                                                        {% translate 'In progress' %}#}
+{#                                                    {% else %}#}
+{#                                                        {% translate 'Pending' %}#}
+{#                                                    {% endif %}#}
+{#                                                </div>#}
+{#                                                <div class="completed-tasks-badge badge-{{ status_phase }}">#}
+{#                                                    {% get_completed_tasks phase.tasks %}#}
+{#                                                </div>#}
+{#                                            </div>#}
+{#                                        </div>#}
+{#                                        <div class="row mt-4">#}
+{#                                            <div class="col-sm-10">#}
+{#                                                {% get_date phase.closed_at as closed_at %}#}
+{#                                                <div class="badge-closed-at">#}
+{#                                                    <i class="far fa-calendar-alt text-warning"></i>#}
+{#                                                    {% trans 'unfinished' as unfinished %}#}
+{#                                                    {% translate 'Completion date' %}:#}
+{#                                                    {{ closed_at|default:unfinished }}#}
+{#                                                </div>#}
+{#                                            </div>#}
+{#                                            <div class="col-sm-2">#}
+{#                                                <i class="fa fa-chevron-circle-right chevron-item fs18"></i>#}
+{#                                            </div>#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                {% endfor %}#}
+{#                            </div>#}
+                            <div class="tab-pane active" id="mgr">
+                                {% include 'common/under_construction_col.html' %}
+                            </div>
+                            <div class="tab-pane" id="p-monitoring">
+                                {% include 'common/under_construction_col.html' %}
+                            </div>
+                            <div class="tab-pane" id="p-diagnostics">
+                                {% include 'common/under_construction_col.html' %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+{% endblock content %}
+
+{% block modals %}
+    {% for phase in adl.phases %}
+        {% include 'adls/phase_detail.html' with phase=phase %}
+    {% endfor %}
+
+    <div class="modal fade modal-confirmation" id="confirmToggleStatusModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form class="form-horizontal" action="{% url 'dashboard:adls:toggle_status' adl|get:'_id' %}"
+                      method="POST">
+                    {% csrf_token %}
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title mx-auto">
+                            <img src="{% static 'images/password-required.png' %}" height="254">
+                        </h5>
+                        <button type="button" class="border-0 bg-transparent" data-dismiss="modal"
+                                aria-label="Close">
+                            <div class="circle-icon bg-primary">
+                                <div class="center-27">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-primary text-center fs17 lh19 text-bold mb-4"
+                             style="padding: 0 45px 0 45px;">
+                            {% translate "Please enter your password to deactivate the facilitator account!" %}
+                        </div>
+                        {% bootstrap_form password_confirm_form %}
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button id="deactivate-btn" type="submit" class="btn btn-lg btn-primary text-right"
+                                disabled>
+                            {% translate "Deactivate Account" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="editProfileFormModal" class="modal" role="dialog" aria-hidden="true" data-backdrop="static"></div>
+{% endblock modals %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'plugins/openlayers/ol.js' %}"></script>
+    <script src="{% static 'js/csrfSafeMethodAjax.js' %}"></script>
+    <script src="{% static 'js/formAjaxSubmit.js' %}"></script>
+    <script type="text/javascript">
+        let map_task_id_selector;
+        $(document).on('click', '.task-detail-button button', function () {
+            $('.phase-detail').hide();
+            let task_id = '#' + $(this).data('id');
+            $(task_id).show();
+
+            let lon = String($(this).data('lon'));
+            let lat = String($(this).data('lat'));
+            let zoom = 8;
+            if (lon && lat) {
+                lon = parseFloat(lon.replace(",", "."));
+                lat = parseFloat(lat.replace(",", "."));
+
+                let Control = ol.control.Control;
+                let ResetPositionControl = /*@__PURE__*/(function (Control) {
+                    function ResetPositionControl(opt_options) {
+                        let options = opt_options || {};
+
+                        let expand_button = document.createElement('button');
+                        expand_button.innerHTML = '<i class="fas fa-expand"></i>';
+                        expand_button.id = 'ol-expand';
+                        expand_button.title = '{% translate "Expand / Collapse" %}';
+
+                        let location_button = document.createElement('button');
+                        location_button.innerHTML = '<i class="fas fa-location-arrow"></i>';
+                        location_button.title = '{% translate "Initial position" %}';
+
+                        let element = document.createElement('div');
+                        element.className = 'ol-custom-buttons ol-unselectable ol-control';
+                        element.appendChild(expand_button);
+                        element.appendChild(location_button);
+
+                        Control.call(this, {
+                            element: element,
+                            target: options.target,
+                        });
+
+                        location_button.addEventListener('click', this.handleResetPosition.bind(this), false);
+                    }
+
+                    if (Control) ResetPositionControl.__proto__ = Control;
+                    ResetPositionControl.prototype = Object.create(Control && Control.prototype);
+                    ResetPositionControl.prototype.constructor = ResetPositionControl;
+
+                    ResetPositionControl.prototype.handleResetPosition = function handleResetPosition() {
+                        let view = this.getMap().getView();
+                        view.setCenter(ol.proj.fromLonLat([lon, lat]));
+                        view.setZoom(zoom)
+                    };
+
+                    return ResetPositionControl;
+                }(Control));
+
+                let map_task_id = 'map-' + $(this).data('id');
+                map_task_id_selector = $('#' + map_task_id);
+                new ol.Map({
+                    target: map_task_id,
+                    layers: [
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        })
+                    ],
+                    view: new ol.View({
+                        center: ol.proj.fromLonLat([lon, lat]),
+                        zoom: zoom
+                    }),
+                    controls: ol.control.defaults().extend([
+                        new ResetPositionControl()
+                    ]),
+                });
+                $("button.ol-zoom-in").first().html('<i class="fas fa-plus"></i>').attr(
+                    'title', '{% translate "Zoom in" %}');
+                $("button.ol-zoom-out").first().html('<i class="fas fa-minus"></i>').attr(
+                    'title', '{% translate "Zoom out" %}');
+                let mapHeight = map_task_id_selector.height();
+                let collapseHeigth = 200;
+                let collapse = true;
+                map_task_id_selector.height(collapseHeigth);
+                $('#ol-expand').on("click", function () {
+                    if (collapse) {
+                        map_task_id_selector.animate({height: mapHeight}, 300);
+                        collapse = false;
+                    } else {
+                        map_task_id_selector.animate({height: collapseHeigth}, 300);
+                        collapse = true;
+                    }
+                });
+            }
+        });
+
+        function reset_state() {
+            $('.task-detail').hide();
+            $('.phase-detail').show();
+            if (map_task_id_selector) {
+                map_task_id_selector.html('');
+            }
+        }
+
+        $(document).on('click', '.show-phase', function () {
+            reset_state()
+        });
+        $('.modal-right').on('hidden.bs.modal', function () {
+            reset_state();
+        });
+
+        $('#id_password').on('keyup', function () {
+            let submit = $('#deactivate-btn');
+            let password_length = $(this).val().trim().length;
+            if (password_length > 7) {
+                submit.prop('disabled', false);
+            } else {
+                submit.prop('disabled', true);
+            }
+        });
+
+        class ProfileFormAjaxSubmit extends FormAjaxSubmit {
+            submitted_form(xhr) {
+                if (xhr.photo) {
+                    $('#photo').attr('src', xhr.photo);
+                }
+                $('#adl_code').html(xhr.adl_code);
+                $('#name').html($("#id_name").val());
+                $('#phone').html($("#id_phone").val());
+                $('#email').html($("#id_email").val().toLowerCase());
+            };
+
+            loaded_form() {
+                let modal_form_picture = $("#modal_form_picture");
+                let id_file = $("#id_file");
+                let edit_picture_button = '<br><a class="btn fs12 text-bold-family text-primary mt-2" ' +
+                    'id="edit_picture"> {% translate "Edit Profile Picture" %} </a>';
+                modal_form_picture.after(edit_picture_button);
+                id_file.parent().wrapInner('<div class="text-center"></div>');
+                $("#edit_picture").click(function () {
+                    id_file.click();
+                });
+
+                id_file.change(function () {
+                    if (this.files && this.files[0]) {
+                        let reader = new FileReader();
+                        reader.onload = function (e) {
+                            modal_form_picture.attr('src', e.target.result);
+                        };
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                });
+            }
+        }
+
+        let profile_form_ajax = new ProfileFormAjaxSubmit();
+        let modal = $('#editProfileFormModal');
+
+        $('#edit_profile').click(function () {
+            let url = "{% url 'dashboard:adls:edit_profile' adl|get:'_id' %}";
+            profile_form_ajax.load_form('#form', modal, url, false, true);
+        });
+    </script>
+{% endblock javascript %}

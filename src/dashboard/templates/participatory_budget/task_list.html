@@ -1,0 +1,38 @@
+{% load custom_tags i18n %}
+
+{% for data in tasks %}
+    {% with data.value.task as task %}
+        <div class="card-item">
+            <div class="row">
+                <div class="col-8">
+                    <div class="text-bold-family fs13 lh20">{% translate 'Task' %}:</div>
+                    <div class="fs14 lh16">{{ task.title }}</div>
+                </div>
+                <div class="col-4 text-right">
+                    <div class="fs13 lh20">{% get_date task.updated_at %}</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-8 mt-2">
+                    <div class="fs13 lh14">
+                        <span class="text-bold-family ">{% translate 'Phase' %}:</span> {{ data.value.phase.title }}
+                    </div>
+                    <div class="fs13 lh14 mt-1">
+                        <span class="text-bold-family ">{% translate 'Commune' %}:</span> {{ data.value.commune }}
+                    </div>
+                </div>
+                <div class="col-4 text-right">
+                    <div class="status-badge badge-{{ task.status }}">
+                        {% if task.status == 'completed' %}
+                            {% translate 'Completed' %}
+                        {% elif task.status == 'in-progress' %}
+                            {% translate 'In progress' %}
+                        {% else %}
+                            {% translate 'Pending' %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+{% endfor %}

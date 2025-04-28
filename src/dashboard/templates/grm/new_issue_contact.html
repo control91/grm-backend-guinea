@@ -1,0 +1,106 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block progress-bar %}
+    {% include 'common/progress_bar.html' with percentage=16 %}
+{% endblock progress-bar %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <img src="{% static 'images/bg-left-horizontal-waves.png' %}" class="bg-left-horizontal-waves"/>
+                <form method="post">{% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="fs20 lh46 mb-1 text-regular-family">
+                                    Entrer une nouvelle reclamation
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="fs56 lh46 text-primary text-bold-family mb-4">
+                                    {% translate 'Step' %} 1
+                                </div>
+                                <div class="fs35 lh35 text-bold-family ">
+                                    Methode préférer de contact
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <span class="fs17 lh18">
+                                    {{ form.contact_medium.label_tag }}
+                                </span>
+                                {% bootstrap_field form.contact_medium show_label=False %}
+                                <div class="ml-4">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            {% bootstrap_field form.contact_type %}
+                                        </div>
+                                        <div class="col-6">
+                                            {% bootstrap_field form.contact %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer mb-2">
+                        <button type="submit" class="btn btn-primary btn-sm rounded-xl float-right mt-4">
+                            ENREGISTRER ET CONTINUER
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block select2 %}
+    <script type="text/javascript">
+        $("#id_contact_type").select2({
+            placeholder: "{% translate 'Click to select contact method' %}",
+            allowClear: true,
+            disabled: {% if doc.contact_information %}false{% else %}true{% endif %}
+        });
+    </script>
+{% endblock select2 %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $('b[role="presentation"]').hide();
+        $('.select2-selection__arrow').append(
+            '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+
+        let contact_type = $('#id_contact_type');
+        let contact = $('#id_contact');
+
+        function toggleContactInputs() {
+            if ($('#id_contact_medium_2').is(':checked')) {
+                contact_type.prop("disabled", false).prop("required", true);
+                if (contact.val()) {
+                    contact.prop("disabled", false).prop("required", true);
+                } else {
+                    contact.prop("disabled", true)
+                }
+                contact.show()
+            } else {
+                contact_type.prop("disabled", true).prop("required", false).val(null).trigger('change');
+                contact.prop("disabled", true).prop("required", false).val('').hide();
+            }
+        }
+
+        toggleContactInputs();
+        $('#id_contact_medium').click(function () {
+            toggleContactInputs()
+        });
+        contact_type.on('select2:select', function (e) {
+            contact.prop("disabled", false).prop("required", true);
+        });
+        contact_type.on('select2:clear', function (e) {
+            contact.prop("disabled", true).prop("required", false).val('');
+        });
+    </script>
+{% endblock javascript %}

@@ -1,0 +1,97 @@
+{% load custom_tags i18n %}
+
+<div id="detailModal{{ phase.ordinal }}" class="modal fixed-left fade modal-right" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-aside" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                {% get_status_phase phase.tasks as status_phase %}
+                <div class="row w-100">
+                    <div class="col-sm-2">
+                        <span class="completed-tasks-badge-modal badge-{{ status_phase }}">
+                            {% get_completed_tasks phase.tasks %}
+                        </span>
+                    </div>
+                    <div class="col-sm-10">
+                        <div class="phase-title-modal">
+                            {{ phase.ordinal }}. {{ phase.title }}
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="toggle-button-modal btn btn-outline-primary" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true"><i class="fa fa-chevron-right"></i></span>
+                </button>
+            </div>
+            <div class="modal-body phase-detail">
+                {% for task in phase.tasks %}
+                    <div class="row">
+                        <div class="col-sm-10">
+                            <div class="card-item">
+                                <div class="row">
+                                    <div class="col col-sm-8">
+                                        {{ task.ordinal }}. {{ task.title }}
+                                    </div>
+                                    <div class="col col-sm-4 text-right">
+                                        <div class="status-badge badge-{{ task.status }}">
+                                            {% if task.status == 'completed' %}
+                                                {% translate 'Completed' %}
+                                            {% elif task.status == 'in-progress' %}
+                                                {% translate 'In progress' %}
+                                            {% else %}
+                                                {% translate 'Pending' %}
+                                            {% endif %}
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="border-separator mt-2 mb-1"></div>
+                                <div class="row">
+                                    <div class="col col-8">
+                                        <div class="info-label-task mb-2">{% translate "Estimated Date" %}</div>
+                                        <div class="badge-task row navbar-white">
+                                            <div class="col-2">
+                                                <i class="far fa-calendar-alt text-warning"></i>
+                                            </div>
+                                            <div class="col-10">
+                                                {% translate "indefinite date" as undefined %}
+                                                {{ task.due_at|string_to_date|date:'M Y'|default:undefined }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col col-4">
+                                        <div class="info-label-task mb-2">{% translate "Document Task" %}</div>
+                                        <div class="badge-task document-task row">
+                                            <div class="col-6 {% if task.notes %}text-primary{% endif %}">
+                                                <i class="far fa-sticky-note fs15"></i>
+                                            </div>
+                                            <div class="col-6 {% if task.attachments|length %}text-primary{% endif %}">
+                                                <i class="fas fa-paperclip"></i>
+                                                <span class="fs12 ml-1">
+                                                    {% if task.attachments|length %}
+                                                        {{ task.attachments|length }}
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="task-detail-button col-sm-2">
+                            {%  with task.location.coords as coords %}
+                                <button type="button" class="btn btn-outline-primary"
+                                        data-lon="{{ coords.longitude }}" data-lat="{{ coords.latitude }}"
+                                        data-id="task-{{ phase.ordinal }}-{{ task.ordinal }}">
+                                    <i class="fa fa-chevron-right"></i>
+                                </button>
+                            {% endwith %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% for task in phase.tasks %}
+                {% include 'adls/task_detail.html' with task=task %}
+            {% endfor %}
+        </div>
+    </div>
+</div>

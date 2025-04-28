@@ -1,0 +1,16 @@
+{
+  "_id": "_design/tasks",
+  "views": {
+    "updated": {
+      "map": "function (doc) {\n  if(doc.type == 'adl') {\n    doc.phases.forEach(function(phase){\n      phase.tasks.forEach(function(task){\n        if(task.updated_at && task.status !== 'not-started') {\n          let d = new Date(task.updated_at);\n          emit([d.getTime(), doc.administrative_region], {'task': task, 'phase':phase, 'administrative_region':doc.name});\n        }\n      });\n    });\n  }\n}"
+    },
+    "updated_by_administrative_region_stats": {
+      "reduce": "_stats",
+      "map": "function (doc) {\n  if(doc.type == 'adl') {\n    doc.phases.forEach(function(phase){\n      phase.tasks.forEach(function(task){\n        if(task.updated_at && task.status !== 'not-started') {\n          let d = new Date(task.updated_at);\n          emit(doc.administrative_region, d.getTime());\n        }\n      });\n    });\n  }\n}"
+    },
+    "updated_by_administrative_region": {
+      "map": "function (doc) {\n  if(doc.type == 'adl') {\n    doc.phases.forEach(function(phase){\n      phase.tasks.forEach(function(task){\n        if(task.updated_at && task.status !== 'not-started') {\n          let d = new Date(task.updated_at);\n          emit([doc.administrative_region, d.getTime()], {'task': task, 'phase':phase, 'administrative_region':doc.name});\n        }\n      });\n    });\n  }\n}"
+    }
+  },
+  "language": "javascript"
+}

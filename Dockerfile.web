@@ -1,0 +1,31 @@
+# Dockerfile
+FROM python:3.10
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    python3-dev \
+    libjpeg62-turbo-dev \
+    zlib1g-dev \
+    curl
+
+
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir  -r requirements.txt
+
+COPY . .
+
+
+COPY entrypoint.sh /entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /entrypoint.sh
+
+# Set the entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]

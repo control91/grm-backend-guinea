@@ -1,0 +1,38 @@
+{% load static i18n custom_tags %}
+
+<table id="table" class="table">
+    <thead class="primary">
+    <tr>
+        <th>{% translate 'ID Number' %}</th>
+        <th>{% translate 'Access Code' %}</th>
+        <th>{% translate 'Summary' %}</th>
+        <th>{% translate 'Assigned to' %}</th>
+        <th>{% translate 'Days Open' %}</th>
+        <th>{% translate 'Category' %}</th>
+        <th>{% translate 'Type' %}</th>
+        <th>{% translate 'Status' %}</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for issue in issues %}
+        <tr>
+            <td>
+                <a href="{% url 'dashboard:grm:issue_detail' issue.auto_increment_id %}">
+                    {{ issue.internal_code }}
+                </a>
+            </td>
+            <td>{{ issue.tracking_code }}</td>
+            <td>{{ issue.description }}</td>
+            <td>{{ issue.assignee.name }}</td>
+            <td>{% get_days_until_today issue.created_date %}</td>
+            <td>{{ issue.category.name }}</td>
+            <td>{{ issue.issue_type.name }}</td>
+            <td>{{ issue.status.name }}</td>
+        </tr>
+    {% empty %}
+        <td class="text-center" colspan="8">
+            {% translate 'No issues found' %}
+        </td>
+    {% endfor %}
+    </tbody>
+</table>
