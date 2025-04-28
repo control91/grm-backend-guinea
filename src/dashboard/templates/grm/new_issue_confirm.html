@@ -1,0 +1,339 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block progress-bar %}
+    {% include 'common/progress_bar.html' with percentage=83 %}
+{% endblock progress-bar %}
+
+{% block content %}
+    {% translate 'Edit' as edit %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <img src="{% static 'images/bg-left-horizontal-waves.png' %}" class="bg-left-horizontal-waves"/>
+                <form id="issue-form" method="post">{% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="fs20 lh46 mb-1 text-regular-family">
+                                    Vérification
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-3">
+                                <div class="fs56 lh46 text-primary text-bold-family mb-4">
+                                    Etape 5
+                                </div>
+                                <div class="fs35 lh35 text-bold-family ">
+                                    Confirmer et soumettre
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                {% bootstrap_field form.contact_medium layout='horizontal' %}
+                                <div class="row">
+                                    <div class="col-md-3">
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="ml-4">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    {% bootstrap_field form.contact_type %}
+                                                </div>
+                                                <div class="col-6">
+                                                    {% bootstrap_field form.contact %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="id_citizen" class="label-align">
+                                            {{ form.citizen.label }}
+                                        </label>
+                                    </div>
+                                    <div class="col-md-9">
+                                        {% bootstrap_field form.citizen show_label=False %}
+                                        {% bootstrap_field form.citizen_type %}
+                                    </div>
+                                </div>
+                                {% bootstrap_field form.citizen_age_group layout='horizontal' %}
+                                {% bootstrap_field form.gender layout='horizontal' %}
+                                {% bootstrap_field form.citizen_group_1 layout='horizontal' %}
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="id_intake_date" class="label-align">
+                                            {{ form.intake_date.label }}
+                                        </label>
+                                    </div>
+                                    <div class="col-md-9">
+                                        {% bootstrap_field form.intake_date show_label=False %}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="id_issue_date" class="label-align">
+                                            {{ form.issue_date.label }}
+                                        </label>
+                                    </div>
+                                    <div class="col-md-9">
+                                        {% bootstrap_field form.issue_date show_label=False %}
+                                    </div>
+                                </div>
+                                {% bootstrap_field form.issue_type layout='horizontal' %}
+                                {% bootstrap_field form.category layout='horizontal' %}
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="id_description" class="label-align">
+                                            {{ form.description.label }}
+                                        </label>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <a class="btn absolute-left-110 p-0 text-primary" id="edit-description"
+                                           title="{{ edit }}">
+                                            <i class="fas fa-edit fs17"></i>
+                                        </a>
+                                        <div id="description_value" class="mb-3"></div>
+                                        <div id="input_description" class="hidden input">
+                                            {% bootstrap_field form.description layout='horizontal' show_label=False %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% bootstrap_field form.ongoing_issue layout='horizontal' %}
+                                <div class="overlay-wrapper">
+                                    <div id="attachments"></div>
+                                    <div class="overlay" id="load-attachments-spin">
+                                        <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                                    </div>
+                                </div>
+                                {% bootstrap_field form.region layout='horizontal' %}
+                                {{ form.region_value }}
+                            </div>
+                            <div class="col-3"></div>
+                        </div>
+                    </div>
+                    <div class="card-footer mb-2">
+                        <button id="next" type="submit" class="btn btn-primary btn-sm rounded-xl float-right">
+                            ENREGISTRER ET CONTINUER
+                        </button>
+                        <a href="{% url 'dashboard:grm:new_issue_step_4' doc.auto_increment_id %}"
+                           class="btn btn-primary btn-sm rounded-xl float-right mr-4 disabled-on-submit">
+                            <i class="fa fa-chevron-left mr-2"></i>
+                            RETOUR
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block modals %}
+    <div id="formModal" class="modal" role="dialog" aria-hidden="true" data-backdrop="static"></div>
+{% endblock modals %}
+
+{% block select2 %}
+    <script src="{% static 'js/dynamicRegionSelector.js' %}"></script>
+    <script type="text/javascript">
+        $("#id_contact_type").select2({
+            placeholder: "{% translate 'Click to select contact method' %}",
+            allowClear: true,
+            disabled: {% if doc.contact_information %}false{% else %}true{% endif %}
+        });
+        $("#id_citizen_age_group").select2({
+            placeholder: "{% translate 'Click to select age group' %}",
+            allowClear: true
+        });
+        $("#id_gender").select2({
+            placeholder: "{% translate 'Click to select gender' %}",
+            allowClear: true
+        });
+        {% translate 'Click to select religion, nationality' as empty_group_msg %}
+        $("#id_citizen_group_1").select2({
+            placeholder: "{{ empty_group_msg }}",
+            allowClear: true
+        });
+        $("#id_citizen_group_2").select2({
+            placeholder: "{{ empty_group_msg }}",
+            allowClear: true
+        });
+        $("#id_issue_type").select2({
+            placeholder: "{% translate 'Click to select the report' %}",
+            allowClear: true
+        });
+        $("#id_category").select2({
+            placeholder: "{% translate 'Click to select the type of grievance' %}",
+            allowClear: true
+        });
+        $("#id_administrative_region").select2({
+            placeholder: "{% translate 'Click to select location' %}",
+            allowClear: true
+        });
+    </script>
+{% endblock select2 %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'js/csrfSafeMethodAjax.js' %}"></script>
+    <script src="{% static 'js/formAjaxSubmit.js' %}"></script>
+    <script src="{% static 'js/deselectableRadios.js' %}"></script>
+    <script type="text/javascript">
+        deselectableRadios("id_citizen_type");
+
+        let load_attachments_spin = $('#load-attachments-spin');
+
+        function loadAttachments() {
+            load_attachments_spin.show();
+            $('#attachments').load("{% url 'dashboard:grm:issue_attachments' doc.auto_increment_id %}", function (
+                response, status, xhr) {
+                if (status === "error") {
+                    alert(error_server_message + "Error " + response.status);
+                }
+                load_attachments_spin.hide();
+                $('#add_attachment').click(function () {
+                    let url = "{% url 'dashboard:grm:upload_issue_attachment' doc.auto_increment_id %}";
+                    file_form_ajax.load_form('#form', modal, url, false, true);
+                });
+            });
+        }
+
+        $(document).ready(function () {
+            loadAttachments();
+        });
+
+
+        class FileFormAjaxSubmit extends FormAjaxSubmit {
+            submitted_form() {
+                loadAttachments();
+            }
+        }
+
+        let file_form_ajax = new FileFormAjaxSubmit();
+        let modal = $('#formModal');
+
+        $('b[role="presentation"]').hide();
+        $('.select2-selection__arrow').append(
+            '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+
+        let dp1 = '<div class="input-group-prepend" data-target="#{id}" data-toggle="datetimepicker">' +
+            '<div class="input-group-text"><i class="fa fa-calendar text-primary"></i></div></div>';
+        let dp2 = '<div class="input-group date" id="{id}" data-target-input="nearest"></div>';
+        $('#id_intake_date').before(dp1.replace('{id}', 'intake_date')).parent().wrapInner(
+            dp2.replace('{id}', 'intake_date'));
+        $('#id_issue_date').before(dp1.replace('{id}', 'issue_date')).parent().wrapInner(
+            dp2.replace('{id}', 'issue_date'));
+
+        let help_text1 = $('#intake_date small')[0];
+        $('#intake_date small').remove();
+        $('#intake_date').after(help_text1);
+
+        let help_text2 = $('#issue_date small')[0];
+        $('#issue_date small').remove();
+        $('#issue_date').after(help_text2);
+
+        //Datemask dd/mm/yyyy
+        $('.datetimepicker-input').inputmask({alias: "datetime", inputFormat: "dd/mm/yyyy"});
+
+        let defaultDate = Date.now();
+        {% if doc.intake_date %}
+            defaultDate = moment("{{ doc.intake_date }}", "YYYY-MM-DD");
+        {% endif %}
+        $('#intake_date').datetimepicker({
+            maxDate: Date.now(),
+            useCurrent: false,
+            defaultDate: defaultDate,
+            format: "DD/MM/YYYY",
+        });
+        {% if doc.issue_date %}
+            defaultDate = moment("{{ doc.issue_date }}", "YYYY-MM-DD");
+        {% else %}
+            defaultDate = false;
+        {% endif %}
+        $('#issue_date').datetimepicker({
+            maxDate: Date.now(),
+            useCurrent: false,
+            defaultDate: defaultDate,
+            format: "DD/MM/YYYY",
+            widgetPositioning: {
+                vertical: 'bottom',
+            }
+        });
+
+        $(document).on('click', '.delete-attachment', function () {
+            $.ajax({
+                url: $(this).data('url'),
+                type: 'POST'
+            })
+                .fail(function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                })
+                .done(function (data) {
+                    loadAttachments();
+                    showPopupMessage(data.msg);
+                })
+        });
+
+        let contact_type = $('#id_contact_type');
+        let contact = $('#id_contact');
+
+        function toggleContactInputs() {
+            if ($('#id_contact_medium_2').is(':checked')) {
+                contact_type.prop("disabled", false).prop("required", true);
+                if (contact.val()) {
+                    contact.prop("disabled", false).prop("required", true);
+                } else {
+                    contact.prop("disabled", true)
+                }
+                contact.show()
+            } else {
+                contact_type.prop("disabled", true).prop("required", false).val(null).trigger('change');
+                contact.prop("disabled", true).prop("required", false).val('').hide();
+            }
+        }
+
+        toggleContactInputs();
+        $('#id_contact_medium').click(function () {
+            toggleContactInputs()
+        });
+        contact_type.on('select2:select', function (e) {
+            contact.prop("disabled", false).prop("required", true);
+        });
+        contact_type.on('select2:clear', function (e) {
+            contact.prop("disabled", true).prop("required", false).val('');
+        });
+
+        $('.is-invalid').parent().show();
+
+        let form = $("#issue-form");
+
+        function isValid(selector) {
+            if (form[0].checkValidity()) {
+                selector.hide();
+                selector.prev().show();
+            } else {
+                form[0].reportValidity();
+            }
+        }
+
+        let description_value = $('#description_value');
+        description_value.html($("#id_description").val());
+        let input_description = $("#input_description");
+        input_description.focusout(function () {
+            isValid($(this));
+            description_value.html($("#id_description").val());
+        });
+
+        $('#edit-description').click(function () {
+            description_value.hide();
+            input_description.show();
+            $("#id_description").focus();
+        });
+
+        let get_ancestors_url = '{% url 'dashboard:grm:get_ancestor_administrative_levels' %}';
+        let get_choices_url = '{% url 'dashboard:grm:get_choices_for_next_administrative_level' %}';
+        let choice_placeholder = "{% translate 'Click to select location' %}";
+        changeRegionTrigger(get_choices_url, choice_placeholder);
+        loadRegionSelectors(get_ancestors_url);
+    </script>
+{% endblock javascript %}

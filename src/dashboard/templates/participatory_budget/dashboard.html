@@ -1,0 +1,211 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block content %}
+    {% translate 'Completed' as completed %}
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card tasks-updated">
+                <div class="card-header pt-4 pr-4 pb-1 border-0">
+                    <div class="card-title">
+                        <div class="communes-performed">
+                            {{ communes_served }}/{{ total_communes }}
+                        </div>
+                        <div class="fs15">
+                            {% translate 'Have started the participatory budgeting process' %}
+                        </div>
+                    </div>
+                    <div class="card-tools">
+                        <div class="input-group mb-3 search-bar-select">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            </div>
+                            {{ commune_select_form.commune }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header pt-0">
+                    <div class="progress height8 rounded-lg">
+                        {% widthratio communes_served total_communes 100 as communes_performed %}
+                        <div class="progress-bar bg-custom-gradient-primary" role="progressbar"
+                             aria-valuenow="{{ communes_performed }}" aria-valuemin="0" aria-valuemax="100"
+                             style="width: {{ communes_performed }}%">
+                            <span class="sr-only">{{ communes_performed }}% {{ completed }}</span>
+                        </div>
+                    </div>
+                    <div class="title mt-4">
+                        {% translate 'Updated Tasks' %}
+                    </div>
+                </div>
+                <div class="card-body overflow-y-auto" style="height: 592px;">
+                    <div id="task-list">{% translate 'No notifications found' %}</div>
+                    <div class="text-center">
+                        <button class="btn btn-link-primary fs12" id="more-tasks" disabled>
+                            {% translate 'Load more notifications' %}
+                        </button>
+                    </div>
+                </div>
+                <div class="overlay" id="tasks-updated-spin">
+                    <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5 display-flex flex-flow-column">
+            <div class="card bg-gradient-custom-green">
+                <div class="card-header border-0">
+                    <div class="card-title">
+                        <div class="pt-1 fs15 lh23 text-bold-family">
+                            {% translate 'Average budget allocated to the BP' %}
+                        </div>
+                    </div>
+                    <div class="card-tools">
+                        <a href="#" class="btn btn-xs bg-white text-custom-green">
+                            {% translate 'See the communes' %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="fs38 lh30">200.000.000 GNF</div>
+                </div>
+            </div>
+            <div class="card h-100">
+                <div class="card-header pt-4 pr-4 pb-1">
+                    <div class="card-title">
+                        <div class="fs15 text-primary text-bold-family">
+                            {% translate 'Participatory Budget Statement' %}
+                        </div>
+                    </div>
+                    <div class="card-tools transparent-select">
+                        {% bootstrap_field month_select_form.month %}
+                    </div>
+                </div>
+                <div class="card-body" id="statement">
+
+                </div>
+                <div class="overlay" id="statement-spin">
+                    <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block select2 %}
+    <script type="text/javascript">
+        $("#id_commune").select2({
+            placeholder: "{% translate 'Search' %}...",
+            allowClear: true
+        });
+        $("#id_month").select2({
+            width: '115px'
+        });
+    </script>
+{% endblock select2 %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        let commune = $('#id_commune');
+
+        commune.on('change', function () {
+            index = 0;
+            setTotalTasks();
+        });
+
+        // Tasks Updated -----------------------------------------------------------------------------------------------
+
+        let tasks_updated_spin = $('#tasks-updated-spin');
+        let index = 0;
+        const offset = 10;
+        let more = $('#more-tasks');
+        let tasks = $('#task-list');
+        let total_tasks = 0;
+
+        function loadTasks() {
+            tasks_updated_spin.show();
+            $.ajax({
+                type: "GET",
+                url: "{% url 'dashboard:participatory_budget:updated_task_list' %}",
+                data: {
+                    index: index,
+                    offset: offset,
+                    commune: commune.val(),
+                },
+                success: function (response) {
+                    tasks_updated_spin.hide();
+                    if (index < total_tasks) {
+                        more.prop('disabled', false);
+                        if (index === 0) {
+                            tasks.html(response);
+                        } else {
+                            tasks.append(response);
+                        }
+                        index += offset;
+                    } else {
+                        more.prop('disabled', true);
+                    }
+                },
+                error: function (data) {
+                    tasks_updated_spin.hide();
+                    alert(error_server_message + "Error " + data.status);
+                }
+            });
+        }
+
+        function setTotalTasks() {
+            $.ajax({
+                type: "GET",
+                url: "{% url 'dashboard:couchdb_proxy:statistics_region_updated_tasks' %}",
+                data: {
+                    commune: commune.val(),
+                },
+                success: function (response) {
+                    total_tasks = response['count'];
+                    loadTasks();
+                },
+                error: function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                }
+            });
+        }
+
+        setTotalTasks();
+        more.click(function () {
+            loadTasks();
+        });
+
+        // Statement ---------------------------------------------------------------------------------------------------
+
+        let statement_spin = $('#statement-spin');
+        let month = $('#id_month');
+
+        function loadStatement() {
+            statement_spin.show();
+            $.ajax({
+                type: "GET",
+                url: "{% url 'dashboard:participatory_budget:statement' %}",
+                data: {
+                    month: month.val(),
+                },
+                success: function (response) {
+                    statement_spin.hide();
+                    $('#statement').html(response);
+                },
+                error: function (data) {
+                    statement_spin.hide();
+                    alert(error_server_message + "Error " + data.status);
+                }
+            });
+        }
+
+        month.on('change', function () {
+            loadStatement();
+        });
+
+        $(document).ready(function () {
+            loadStatement();
+        });
+    </script>
+
+{% endblock javascript %}

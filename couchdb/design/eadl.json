@@ -1,0 +1,12 @@
+{
+  "_id": "_design/eadl",
+  "views": {
+    "all_communes": {
+      "map": "function (doc) {\n  if(doc.type === 'administrative_level' && doc.administrative_level === 'commune')\n    emit(doc._id, doc);\n}"
+    }
+  },
+  "filters": {
+    "by_user_email": "function (doc, req) {\n return doc._id === '_design/eadl' || (doc.representative && doc.representative.email === req.query.email); \n}"
+  },
+  "language": "javascript"
+}

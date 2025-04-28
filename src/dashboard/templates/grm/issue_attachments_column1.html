@@ -1,0 +1,46 @@
+{% load i18n %}
+
+{% if attachments %}
+    <div class="form-group row">
+        <div class="col-12">
+            <label class="label-align">
+                {% translate 'Attachments' %}
+            </label>
+            <small class="form-text text-muted mt-0">
+                {% blocktranslate %}
+                    Allowed to upload up to {{ max_attachments }} attachments
+                {% endblocktranslate %}
+            </small>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {% for attachment in attachments %}
+                <div class="row">
+                    <div class="col-6 border-bottom">
+                        <div class="d-inline-block padding-6-0">
+                            <a href="{% url 'attachments:get-attachment' attachment.bd_id attachment.name %}?db=grm"
+                               target="_blank">
+                                <i class="fas fa-paperclip mr-2"></i>
+                                {{ attachment.name }}
+                            </a>
+                        </div>
+                        <a class="btn pull-right delete-attachment {% if not permission_to_edit %}disabled{% endif %}"
+                           data-url="{% url 'dashboard:grm:delete_issue_attachment' doc.auto_increment_id attachment.id %}">
+                            <i class="far fa-trash-alt text-danger"></i>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+<div {% if attachments|length == max_attachments %}style="cursor: not-allowed;"{% endif %} class="row mt-4">
+    <div class="col-12">
+        <a class="btn btn-primary btn-sm fs12 rounded-xl {% if attachments|length == max_attachments or not permission_to_edit %}
+        disabled{% endif %}"
+           id="add_attachment">
+            {% translate "Add attachments" %}
+        </a>
+    </div>
+</div>

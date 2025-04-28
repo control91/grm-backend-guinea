@@ -1,0 +1,106 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block progress-bar %}
+    {% include 'common/progress_bar.html' with percentage=66 %}
+{% endblock progress-bar %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <img src="{% static 'images/bg-left-horizontal-waves.png' %}" class="bg-left-horizontal-waves"/>
+                <form method="post">{% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="fs20 lh46 mb-1 text-regular-family">
+                                    Entrer une nouvelle réclamation
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="fs56 lh46 text-primary text-bold-family mb-4">
+                                    {% translate 'Step' %} 4
+                                </div>
+                                <div class="fs35 lh35 text-bold-family ">
+                                    Localisation du problème
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                {% bootstrap_form form layout='horizontal' %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer mb-2" style="margin-top: 120px">
+                        <button id="next" type="submit" class="btn btn-primary btn-sm rounded-xl float-right" disabled>
+                            ENREGISTRER ET CONTINUER
+                        </button>
+                        <a href="{% url 'dashboard:grm:new_issue_step_3' doc.auto_increment_id %}"
+                           class="btn btn-primary btn-sm rounded-xl float-right mr-4 disabled-on-submit">
+                            <i class="fa fa-chevron-left mr-2"></i>
+                            RETOUR
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block select2 %}
+    <script src="{% static 'js/dynamicRegionSelector.js' %}"></script>
+    <script type="text/javascript">
+        $("#id_region").select2({
+            placeholder: "Cliquez pour choisir la région",
+            allowClear: true
+        });
+         $("#id_prefecture").select2({
+            placeholder: "Cliquez pour choisir la prefecture",
+            allowClear: true
+        });
+        $('b[role="presentation"]').hide();
+        $('.select2-selection__arrow').append(
+            '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+
+    </script>
+{% endblock select2 %}
+
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        let get_ancestors_url = '{% url 'dashboard:grm:get_ancestor_administrative_levels' %}';
+        let get_choices_url = '{% url 'dashboard:grm:get_choices_for_next_administrative_level' %}';
+        let choice_placeholder = "{% translate 'Click to select location' %}";
+        changeRegionTrigger(get_choices_url, choice_placeholder);
+        loadRegionSelectors(get_ancestors_url);
+
+        $('#id_region').on('change', function() {
+            console.log($(this).val())
+             $.ajax({
+                type: 'GET',
+                url: '{% url 'dashboard:diagnostics:get_prefecture_by_region_id' %}',
+                data: {
+                    region_id: $(this).val(),
+                },
+                success: function (data) {
+                    console.log(data)
+
+                     var $prefectureSelect = $("#id_prefecture");
+                    $prefectureSelect.empty(); // Vider le select avant d'ajouter les nouvelles options
+                    $prefectureSelect.append('<option value="">Sélectionnez une préfecture</option>');
+
+                    // Ajouter chaque préfecture dans le select
+                    $.each(data, function(index, prefecture) {
+                        $prefectureSelect.append('<option value="' + prefecture._id + '">' + prefecture.name + '</option>');
+                    });
+                },
+                error: function (data) {
+                    console.log(data)
+                }
+            });
+        })
+    </script>
+{% endblock javascript %}

@@ -1,0 +1,172 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block progress-bar %}
+    {% include 'common/progress_bar.html' with percentage=50 %}
+{% endblock progress-bar %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <img src="{% static 'images/bg-left-horizontal-waves.png' %}" class="bg-left-horizontal-waves"/>
+                <form method="post">{% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="fs20 lh46 mb-1 text-regular-family">
+                                    Détail de la réclamation
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="fs56 lh46 text-primary text-bold-family mb-4">
+                                    Etape 3
+                                </div>
+                                <div class="fs35 lh35 text-bold-family ">
+                                    Information de base
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                {% bootstrap_form form layout='horizontal' %}
+                                <div class="overlay-wrapper">
+                                    <div id="attachments"></div>
+                                    <div class="overlay" id="load-attachments-spin">
+                                        <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer mb-2">
+                        <button type="submit" class="btn btn-primary btn-sm rounded-xl float-right">
+                            ENREGISTRER ET CONTINUER
+                        </button>
+                        <a href="{% url 'dashboard:grm:new_issue_step_2' doc.auto_increment_id %}"
+                           class="btn btn-primary btn-sm rounded-xl float-right mr-4 disabled-on-submit">
+                            <i class="fa fa-chevron-left mr-2"></i>
+                            RETOUR
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modals %}
+    <div id="formModal" class="modal" role="dialog" aria-hidden="true" data-backdrop="static"></div>
+{% endblock modals %}
+
+{% block select2 %}
+    <script type="text/javascript">
+        $("#id_issue_type").select2({
+            placeholder: "Cliquez pour selectionner le type de réclamation",
+            allowClear: true
+        });
+        $("#id_category").select2({
+            placeholder: "Cliquez pour selectionner le secteur d'activité",
+            allowClear: true
+        });
+    </script>
+{% endblock select2 %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'js/csrfSafeMethodAjax.js' %}"></script>
+    <script src="{% static 'js/formAjaxSubmit.js' %}"></script>
+    <script type="text/javascript">
+        let load_attachments_spin = $('#load-attachments-spin');
+
+        function loadAttachments() {
+            load_attachments_spin.show();
+            $('#attachments').load("{% url 'dashboard:grm:issue_attachments' doc.auto_increment_id %}", function (
+                response, status, xhr) {
+                if (status === "error") {
+                    alert(error_server_message + "Error " + response.status);
+                }
+                load_attachments_spin.hide();
+                $('#add_attachment').click(function () {
+                    let url = "{% url 'dashboard:grm:upload_issue_attachment' doc.auto_increment_id %}";
+                    file_form_ajax.load_form('#form', modal, url, false, true);
+                });
+            });
+        }
+
+        $(document).ready(function () {
+            loadAttachments();
+        });
+
+
+        class FileFormAjaxSubmit extends FormAjaxSubmit {
+            submitted_form() {
+                loadAttachments();
+            }
+        }
+
+        let file_form_ajax = new FileFormAjaxSubmit();
+        let modal = $('#formModal');
+
+        $('b[role="presentation"]').hide();
+        $('.select2-selection__arrow').append(
+            '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+        let dp1 = '<div class="input-group-prepend" data-target="#{id}" data-toggle="datetimepicker">' +
+            '<div class="input-group-text"><i class="fa fa-calendar text-primary"></i></div></div>';
+        let dp2 = '<div class="input-group date" id="{id}" data-target-input="nearest"></div>';
+        $('#id_intake_date').before(dp1.replace('{id}', 'intake_date')).parent().wrapInner(
+            dp2.replace('{id}', 'intake_date'));
+        $('#id_issue_date').before(dp1.replace('{id}', 'issue_date')).parent().wrapInner(
+            dp2.replace('{id}', 'issue_date'));
+
+        let help_text1 = $('#intake_date small')[0];
+        $('#intake_date small').remove();
+        $('#intake_date').after(help_text1);
+
+        let help_text2 = $('#issue_date small')[0];
+        $('#issue_date small').remove();
+        $('#issue_date').after(help_text2);
+
+        //Datemask dd/mm/yyyy
+        $('.datetimepicker-input').inputmask({alias: "datetime", inputFormat: "dd/mm/yyyy"});
+
+        let defaultDate = Date.now();
+        {% if doc.intake_date %}
+            defaultDate = moment("{{ doc.intake_date }}", "YYYY-MM-DD");
+        {% endif %}
+        $('#intake_date').datetimepicker({
+            maxDate: Date.now(),
+            useCurrent: false,
+            defaultDate: defaultDate,
+            format: "DD/MM/YYYY",
+        });
+        {% if doc.issue_date %}
+            defaultDate = moment("{{ doc.issue_date }}", "YYYY-MM-DD");
+        {% else %}
+            defaultDate = false;
+        {% endif %}
+        $('#issue_date').datetimepicker({
+            maxDate: Date.now(),
+            useCurrent: false,
+            defaultDate: defaultDate,
+            format: "DD/MM/YYYY",
+            widgetPositioning: {
+                vertical: 'bottom',
+            }
+        });
+
+        $(document).on('click', '.delete-attachment', function () {
+            $.ajax({
+                url: $(this).data('url'),
+                type: 'POST'
+            })
+                .fail(function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                })
+                .done(function (data) {
+                    loadAttachments();
+                    showPopupMessage(data.msg);
+                })
+        });
+    </script>
+{% endblock javascript %}

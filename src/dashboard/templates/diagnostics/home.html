@@ -1,0 +1,541 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 i18n static %}
+
+{% block extracss %}
+    {{ block.super }}
+    <link href="{% static 'AdminLTE/plugins/chart.js/Chart.css' %}" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.css" rel="stylesheet">
+    <style>
+        #map {
+            height: 600px;
+        }
+
+    </style>
+{% endblock extracss %}
+
+{% block content %}
+    {% translate 'Number' as number %}
+    {% translate 'Percentage' as percentage %}
+    {% translate 'Status' as status %}
+    {% translate 'Type' as type %}
+    {% translate 'Category' as category %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-0">
+                    <div class="card-title">
+                        <div class="pt-1 fs20 lh25 text-primary text-bold-family">
+                            {% translate 'Filter by' %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-4 issues-filter">
+                            {% bootstrap_field form.start_date layout='horizontal' show_label=False %}
+                            {% bootstrap_field form.end_date layout='horizontal' show_label=False %}
+                        </div>
+                        <div class="col-4 issues-filter border-left">
+                            {% bootstrap_field form.type layout='horizontal' show_label=False %}
+                            {% bootstrap_field form.category layout='horizontal' show_label=False %}
+                        </div>
+                        <div class="col-4 regions-filter border-left">
+                            {% bootstrap_field form.region layout='horizontal' %}
+                            {% bootstrap_field form.prefecture layout='horizontal' %}
+                        </div>
+                    </div>
+                    <a class="btn fs12 text-bold-family text-primary pull-right p-0"
+                       id="clear_all_filters">
+                        {% translate "Clear all filters" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card transparent">
+        <div class="card-body">
+            <div class="overlay-wrapper">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body" style="height: 650px;">
+                                <div id="map"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 display-flex flex-flow-column">
+                        <div class="card h-100">
+                            <div class="card-body table-responsive overflow-y-auto" style="max-height: 650px;">
+                                <table id="table" class="table">
+                                    <thead class="primary">
+                                    <tr>
+                                        <th id="administrative_level_label"></th>
+                                        <th>{{ number }}</th>
+                                        <th>{{ percentage }}</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="region-stats">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header border-0">
+                                <div class="card-title">
+                                    <div class="pt-1 fs20 lh25 text-primary text-bold-family">
+                                        {{ status }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="status_pie_chart" class="pie-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body table-responsive">
+                                <table id="table" class="table">
+                                    <thead class="primary">
+                                    <tr>
+                                        <th>{{ status }}</th>
+                                        <th>{{ number }}</th>
+                                        <th>{{ percentage }}</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="status-stats">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header border-0">
+                                <div class="card-title">
+                                    <div class="pt-1 fs20 lh25 text-primary text-bold-family">
+                                        {{ type }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="type_pie_chart" class="pie-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body table-responsive">
+                                <table id="table" class="table">
+                                    <thead class="primary">
+                                    <tr>
+                                        <th>{{ type }}</th>
+                                        <th>{{ number }}</th>
+                                        <th>{{ percentage }}</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="type-stats">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header border-0">
+                                <div class="card-title">
+                                    <div class="pt-1 fs20 lh25 text-primary text-bold-family">
+                                        {{ category }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="category_pie_chart" class="pie-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body table-responsive">
+                                <table id="table" class="table">
+                                    <thead class="primary">
+                                    <tr>
+                                        <th>{{ category }}</th>
+                                        <th>{{ number }}</th>
+                                        <th>{{ percentage }}</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="category-stats">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overlay z-index1000" id="statistics-spin">
+                    <i class="fas fa-10x fa-sync-alt fa-spin">
+                    </i>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block select2 %}
+    <script src="{% static 'js/dynamicRegionSelector.js' %}"></script>
+    <script type="text/javascript">
+        $("#id_category").select2({
+            placeholder: "{% translate 'Category' %}",
+            allowClear: true
+        });
+        $("#id_type").select2({
+            placeholder: "{% translate 'Type' %}",
+            allowClear: true,
+        });
+        $("#id_administrative_region").select2({
+            placeholder: "{% translate 'Location' %}",
+            allowClear: true
+        });
+
+        $('b[role="presentation"]').hide();
+        $('.select2-selection__arrow').append(
+            '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+
+    </script>
+{% endblock select2 %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.js"></script>
+    <script src="{% static 'AdminLTE/plugins/chart.js/Chart.js' %}"></script>
+    <script>
+        let administrative_level_label = $("#administrative_level_label");
+        let statistics_spin = $('#statistics-spin');
+        let start_date = $('#id_start_date');
+        let end_date = $('#id_end_date');
+        let category = $('#id_category');
+        let type = $('#id_type');
+        let current_region_id;
+        let markers = [];
+        let statusPieChartCanvas = $('#status_pie_chart').get(0).getContext('2d');
+        let typePieChartCanvas = $('#type_pie_chart').get(0).getContext('2d');
+        let categoryPieChartCanvas = $('#category_pie_chart').get(0).getContext('2d');
+        let pieOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            legend: {
+                display: false
+            },
+        };
+        let colors = [
+            '#ffc107',
+            '#17a2b8',
+            '#dc3545',
+            '#20c997',
+            '#fd7e14',
+            '#7276d1',
+            '#d078bb',
+            '#3d9970',
+            '#74a1f5',
+            '#3a4c8d',
+            '#ef6a78',
+            '#28a745',
+            '#00FFFF',
+            '#d81b60',
+            '#6610f2',
+            '#bcb72f',
+            '#f012be',
+            '#01ff70',
+            '#6f42c1',
+            '#e83e8c',
+            '#707070'
+        ];
+        let colors_length = colors.length;
+
+
+        administrative_level_label.html($("label[for='id_administrative_region']").html());
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY29udHJvbDkxIiwiYSI6ImNtNzNhYzF1YzBndGcybHF6ZnI3NnlldTcifQ.LvptXLEUbSjvLVz9Rbp8WA';
+
+        if (!mapboxgl.supported()) {
+            alert('Your browser does not support Mapbox GL');
+        }
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [{{ lng }}, {{ lat }}],
+            zoom: {{ zoom }}
+        });
+
+        const bounds = [
+            {{ ws_bound }}, // [west, south]
+            {{ en_bound }}  // [east, north]
+        ];
+        // Set the map's max bounds.
+        map.setMaxBounds(bounds);
+
+        map.on('load', function () {
+            map.addLayer(
+                {
+                    'id': 'country-boundaries',
+                    'source': {
+                        'type': 'vector',
+                        'url': 'mapbox://mapbox.country-boundaries-v1',
+                    },
+                    'source-layer': 'country_boundaries',
+                    'type': 'fill',
+                    'paint': {
+                        'fill-color': '#d2361e',
+                        'fill-opacity': 0.2,
+                    },
+                },
+                'country-label'
+            );
+
+            map.setFilter('country-boundaries', [
+                "in",
+                "iso_3166_1_alpha_3",
+                '{{ country_iso_code }}',
+            ]);
+
+            setTimeout(function () {
+                statistics_spin.hide();
+            }, 1000);
+        });
+
+        map.on('styledata', (e) => {
+            statistics_spin.show();
+        });
+
+        map.on('idle', (e) => {
+            setTimeout(function () {
+                statistics_spin.hide();
+            }, 96000);
+        });
+
+        loadStatistics();
+
+        function fillStats(stats, table_selector, chart = null) {
+            let stats_table = document.createElement('div');
+            let index = 0;
+            $.each(stats, function (key, value) {
+                const tr = document.createElement('tr');
+                const td_name = document.createElement('td');
+                td_name.innerHTML = value.name;
+                tr.appendChild(td_name);
+                const td_issues = document.createElement('td');
+                td_issues.innerHTML = value.issues;
+                tr.appendChild(td_issues);
+                const td_percentage = document.createElement('td');
+                td_percentage.innerHTML = value.percentage + '%';
+                tr.appendChild(td_percentage);
+                stats_table.append(tr);
+
+                if (chart) {
+                    chart.data.labels.push(value.name);
+                    chart.data.datasets[0].data.push(value.percentage);
+                    chart.data.datasets[0].backgroundColor.push(colors[index % colors_length]);
+                    index++;
+                }
+            });
+            table_selector.html(stats_table.innerHTML);
+            chart && chart.update();
+        }
+
+        function loadStatistics() {
+            statistics_spin.show();
+
+            // clear markers array
+            markers.forEach((marker) => marker.remove());
+
+            $.ajax({
+                type: 'GET',
+                url: '{% url 'dashboard:diagnostics:issues_statistics' %}',
+                data: {
+                    start_date: start_date.val(),
+                    end_date: end_date.val(),
+                    category: category.val(),
+                    type: type.val(),
+                    region: current_region_id,
+                },
+                success: function (data) {
+                    let region_stats = data.region_stats;
+                    let status_stats = data.status_stats;
+                    let type_stats = data.type_stats;
+                    let category_stats = data.category_stats;
+
+                    let statusChart = new Chart(statusPieChartCanvas, {
+                        type: 'pie',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    data: [],
+                                    backgroundColor: [],
+                                }
+                            ]
+                        },
+                        options: pieOptions
+                    });
+                    let typeChart = new Chart(typePieChartCanvas, {
+                        type: 'pie',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    data: [],
+                                    backgroundColor: [],
+                                }
+                            ]
+                        },
+                        options: pieOptions
+                    });
+                    let categoryChart = new Chart(categoryPieChartCanvas, {
+                        type: 'pie',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    data: [],
+                                    backgroundColor: [],
+                                }
+                            ]
+                        },
+                        options: pieOptions
+                    });
+
+                    if (Object.keys(region_stats).length > 0) {
+                        let level = region_stats[Object.keys(region_stats)[0]].level;
+                        administrative_level_label.html(level);
+
+                        $.each(region_stats, function (administrative_id, region) {
+                            // create DOM element for the marker
+                            const el = document.createElement('div');
+                            el.className = 'map-marker';
+                            el.title = region.name;
+                            el.textContent = region.percentage + '%';
+
+                            // create the marker
+                            let marker = new mapboxgl.Marker(el)
+                                .setLngLat([region.longitude, region.latitude])
+                                .addTo(map);
+                            markers.push(marker);
+
+                        });
+
+                        fillStats(region_stats, $('#region-stats'));
+                        fillStats(status_stats, $('#status-stats'), statusChart);
+                        fillStats(type_stats, $('#type-stats'), typeChart);
+                        fillStats(category_stats, $('#category-stats'), categoryChart);
+
+                    } else {
+                        let no_issues_msg = "{% translate "No issues found" %}";
+                        let no_issues_msg_html = '<td class="text-center" colspan="3">' + no_issues_msg + '</td>';
+                        $('#region-stats').html(no_issues_msg_html);
+                        $('#status-stats').html(no_issues_msg_html);
+                        $('#type-stats').html(no_issues_msg_html);
+                        $('#category-stats').html(no_issues_msg_html);
+                    }
+                    statistics_spin.hide();
+                },
+                error: function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                    statistics_spin.hide();
+                }
+            });
+        }
+
+        function changeRegionTrigger(url, placeholder) {
+            $(document).on("change", ".region", function () {
+                let current_input_value = $(this).val();
+                if (current_input_value) {
+                    current_region_id = current_input_value;
+                } else {
+                    current_region_id = $("select.region").eq(-2).val();
+                }
+                loadNextLevelRegions($(this), url, placeholder);
+                loadStatistics();
+            });
+        }
+
+        let get_choices_url = '';
+        let choice_placeholder = "{% translate 'Click to select location' %}";
+        changeRegionTrigger(get_choices_url, choice_placeholder);
+
+        let dp1 = '<div class="input-group-prepend" data-target="#{id}" data-toggle="datetimepicker">' +
+            '<div class="input-group-text"><i class="fa fa-calendar text-primary"></i></div></div>';
+        let dp2 = '<div class="input-group date" id="{id}" data-target-input="nearest"></div>';
+        $('#id_start_date').before(dp1.replace('{id}', 'start_date')).parent().wrapInner(
+            dp2.replace('{id}', 'start_date'));
+        $('#id_end_date').before(dp1.replace('{id}', 'end_date')).parent().wrapInner(
+            dp2.replace('{id}', 'end_date'));
+
+        //Datemask dd/mm/yyyy
+        $('.datetimepicker-input').inputmask({alias: "datetime", inputFormat: "dd/mm/yyyy"});
+
+        let options = {
+            maxDate: Date.now(),
+            useCurrent: false,
+            format: "DD/MM/YYYY",
+            widgetPositioning: {
+                vertical: 'bottom',
+            }
+        };
+
+        function dateChanged(e) {
+            if (e.oldDate !== e.date) {
+                loadStatistics();
+            }
+        }
+
+        $('#start_date').datetimepicker(options);
+        $('#start_date').on("change.datetimepicker", dateChanged);
+        $('#end_date').datetimepicker(options);
+        $('#end_date').on("change.datetimepicker", dateChanged);
+        $('.issues-filter input').on('change keyup', function () {
+            if (!$(this).val()) {
+                loadStatistics();
+            }
+        });
+        $('.issues-filter select').on('change', function () {
+            loadStatistics();
+        });
+
+        $("#clear_all_filters").on("click", function () {
+            $('.issues-filter input').val('');
+            $('.issues-filter select').val(null).trigger('change.select2');
+            $('.regions-filter select').val(null).trigger('change.select2');
+            current_region_id = null;
+            loadStatistics();
+            loadNextLevelRegions($("#id_administrative_region"), '', '');
+        });
+
+        $('#id_region').on('change', function() {
+            console.log($(this).val())
+             $.ajax({
+                type: 'GET',
+                url: '{% url 'dashboard:diagnostics:get_prefecture_by_region_id' %}',
+                data: {
+                    region_id: $(this).val(),
+                },
+                success: function (data) {
+                    console.log(data)
+
+                     var $prefectureSelect = $("#id_prefecture");
+                    $prefectureSelect.empty(); // Vider le select avant d'ajouter les nouvelles options
+                    $prefectureSelect.append('<option value="">Sélectionnez une préfecture</option>');
+
+                    // Ajouter chaque préfecture dans le select
+                    $.each(data, function(index, prefecture) {
+                        $prefectureSelect.append('<option value="' + prefecture._id + '">' + prefecture.name + '</option>');
+                    });
+                },
+                error: function (data) {
+                    console.log(data)
+                }
+            });
+        })
+
+    </script>
+{% endblock javascript %}

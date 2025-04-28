@@ -1,0 +1,441 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n custom_tags %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-8">
+            <div class="card h-100">
+                <div class="card-header border-0">
+                    <div class="card-title">
+                        <div class="pt-1 fs20 lh25 text-bold-family">
+                            {{ doc.internal_code }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body text-left">
+                    <div class="row mr-2">
+                        <div class="col-12">
+                            <label>{% translate 'Summary' %}</label>
+                            <p>{{ doc.description }}</p>
+                        </div>
+                    </div>
+                    <div class="overlay-wrapper">
+                        <div id="attachments"></div>
+                        <div class="overlay" id="load-attachments-spin">
+                            <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card h-100">
+                <div class="card-body">
+
+                    <div class="overlay-wrapper">
+                        <div id="status_buttons"></div>
+                        <div class="overlay" id="load-status-buttons-spin">
+                            <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                        </div>
+                    </div>
+
+                    {% bootstrap_field form.assignee layout='horizontal' %}
+                    <div class="row mr-2 mb-2">
+                        <div class="col-3">
+                            <label class="label-align">
+                                {% translate 'Reporter' %}
+                            </label>
+                        </div>
+                        <div class="col-9 text-regular-family">
+                            {{ doc.reporter.name }}
+                        </div>
+                    </div>
+                    <div class="row mr-2 mb-2">
+                        <div class="col-3">
+                            <label class="label-align">
+                                {% translate 'Reported' %}
+                            </label>
+                        </div>
+                        <div class="col-9 text-regular-family">
+                            {{ doc.created_date|string_to_date|date:'j - F - Y' }}
+                        </div>
+                    </div>
+                    <div class="row mr-2 mb-2">
+                        <div class="col-3">
+                            <label class="label-align">
+                                {% translate 'Lodged by' %}
+                            </label>
+                        </div>
+                        <div class="col-9 text-regular-family">
+                            {% get_citizen_type_alt_display doc.citizen_type %}
+                        </div>
+                    </div>
+                    {% if doc.citizen %}
+                        <div class="row mr-2 mb-2">
+                            <div class="col-3">
+                                <label class="label-align">
+                                    {% translate 'Name' %}
+                                </label>
+                            </div>
+                            <div class="col-9 text-regular-family">
+                                {% if doc.assignee.id != user.id and doc.citizen_type == 1 %}
+                                    {% translate 'Confidential' %}
+                                {% else %}
+                                    <div id="citizen">
+                                        *****
+                                        <i class="fas fa-eye pull-right link show-data"
+                                           title={% translate "Show sensitive data" %}></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if doc.citizen_age_group %}
+                        <div class="row mr-2 mb-2">
+                            <div class="col-3">
+                                <label class="label-align">
+                                    {% translate 'Age' %}
+                                </label>
+                            </div>
+                            <div class="col-9 text-regular-family">
+                                {% if doc.assignee.id != user.id and doc.citizen_type == 1 %}
+                                    {% translate 'Confidential' %}
+                                {% else %}
+                                    {{ doc.citizen_age_group.name }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="row mr-2 mb-2">
+                        <div class="col-3">
+                            <label class="label-align">
+                                {% translate 'Location' %}
+                            </label>
+                        </div>
+                        <div class="col-9 text-regular-family">
+                            {% if doc.assignee.id != user.id and doc.citizen_type == 1 %}
+                                {% translate 'Confidential' %}
+                            {% else %}
+                                {% get_administrative_region_name doc.administrative_region.administrative_id %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mr-2 mb-2">
+                        <div class="col-3">
+                            <label class="label-align">
+                                {% translate 'Category' %}
+                            </label>
+                        </div>
+                        <div class="col-9 text-regular-family">
+                            {{ doc.category.name }}
+                        </div>
+                    </div>
+                    <div class="row mr-2 mb-2">
+                        <div class="col-3">
+                            <label class="label-align">
+                                {% translate 'Type' %}
+                            </label>
+                        </div>
+                        <div class="col-9 text-regular-family">
+                            {{ doc.issue_type.name }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-8">
+            <div class="card mh-750">
+                <div class="card-header border-0">
+                    <div class="card-title">
+                        <div class="pt-1 fs20 lh25 text-bold-family">
+                            {% translate 'Steps Taken' %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header">
+                    {% if enable_add_comment and permission_to_edit %}
+                        <div class="row mb-3">
+                            <div class="col-1">
+                                {% with indexed_users|get:user.id as color_index %}
+                                    <div class="circle-icon navbar-{{ colors|next_in_circular_list:color_index }}
+                                    text-white text-bold-family">
+                                        <div class="center-32 pt-1">
+                                            {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                                        </div>
+                                    </div>
+                                {% endwith %}
+                            </div>
+                            <div class="col-9">
+                                {% bootstrap_form comment_form %}
+                            </div>
+                            <div class="col-2">
+                                <button class="btn btn-primary btn-sm fs12 rounded-xl" disabled id="add_comment">
+                                    {% translate "Save" %}
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body overflow-y-auto">
+                    <div class="overlay-wrapper">
+                        <div id="comments">
+                            {% include 'grm/issue_comments.html' with comments=doc.comments colors=colors indexed_users=indexed_users %}
+                        </div>
+                        <div class="overlay" id="load-comments-spin">
+                            <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block modals %}
+    <div id="fileFormModal" class="modal" role="dialog" aria-hidden="true" data-backdrop="static"></div>
+    <div id="statusChangeModalForm" class="modal" role="dialog" aria-hidden="true" data-backdrop="static"></div>
+
+    <div class="modal fade modal-confirmation" id="checkPasswordModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title mx-auto">
+                        <img src="{% static 'images/password-required.png' %}" height="254">
+                    </h5>
+                    <button type="button" class="border-0 bg-transparent" data-dismiss="modal"
+                            aria-label="Close">
+                        <div class="circle-icon bg-primary">
+                            <div class="center-27">
+                                <i class="fas fa-times"></i>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-primary text-center fs17 lh19 text-bold mb-4"
+                         style="padding: 0 45px 0 45px;">
+                        {% translate "Please enter your password to show sensitive data" %}
+                    </div>
+                    {% bootstrap_form password_confirm_form %}
+                </div>
+                <div class="modal-footer border-0">
+                    <button id="check-password" type="submit" class="btn btn-lg btn-primary text-right">
+                        {% translate "Check password" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock modals %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'js/csrfSafeMethodAjax.js' %}"></script>
+    <script src="{% static 'js/formAjaxSubmit.js' %}"></script>
+    <script type="text/javascript">
+        let load_attachments_spin = $('#load-attachments-spin');
+        let load_status_buttons_spin = $('#load-status-buttons-spin');
+        let status_change_modal = $('#statusChangeModalForm');
+        let assignee = $('#id_assignee');
+
+        {% if not permission_to_edit %}
+            assignee.prop("disabled", true);
+        {% endif %}
+
+        assignee.on('change', function () {
+            $.ajax({
+                type: "POST",
+                url: "{% url 'dashboard:grm:edit_issue' doc.auto_increment_id %}",
+                data: {
+                    "assignee": assignee.val()
+                },
+                success: function (response) {
+                    showPopupMessage(response.msg);
+                },
+                error: function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                }
+            });
+        });
+
+        class ResearchResultFormAjaxSubmit extends FormAjaxSubmit {
+            submitted_form() {
+                loadStatusButtons();
+            }
+        }
+
+        let research_result_form_ajax = new ResearchResultFormAjaxSubmit();
+
+        class RejectReasonFormAjaxSubmit extends FormAjaxSubmit {
+            submitted_form() {
+                loadStatusButtons();
+            }
+        }
+
+        let reject_reason_form_ajax = new RejectReasonFormAjaxSubmit();
+
+
+        function loadStatusButtons() {
+            load_status_buttons_spin.show();
+            $('#status_buttons').load("{% url 'dashboard:grm:issue_status_buttons' doc.auto_increment_id %}", function (
+                response, status, xhr) {
+                if (status === "error") {
+                    alert(error_server_message + "Error " + response.status);
+                }
+                load_status_buttons_spin.hide();
+                let accept_issue = $("#accept_issue");
+                let record_resolution = $("#record_resolution");
+                let reject_issue = $("#reject_issue");
+
+                {% if not permission_to_edit %}
+                    $('.btn-status').prop("disabled", true);
+                {% endif %}
+
+                accept_issue.on('click', function () {
+                    $.ajax({
+                        type: "POST",
+                        url: "{% url 'dashboard:grm:submit_issue_open_status' doc.auto_increment_id %}",
+                        success: function (response) {
+                            showPopupMessage(response.msg);
+                            loadStatusButtons();
+                        },
+                        error: function (data) {
+                            alert(error_server_message + "Error " + data.status)
+                        }
+                    });
+                });
+
+                record_resolution.on('click', function () {
+                    let url = "{% url 'dashboard:grm:submit_issue_research_result' doc.auto_increment_id %}";
+                    research_result_form_ajax.load_form('#research_result_form', status_change_modal, url);
+                });
+
+                reject_issue.on('click', function () {
+                    let url = "{% url 'dashboard:grm:submit_issue_reject_reason' doc.auto_increment_id %}";
+                    reject_reason_form_ajax.load_form('#reject_reason_form', status_change_modal, url);
+                });
+
+            });
+        }
+
+        class FileFormAjaxSubmit extends FormAjaxSubmit {
+            submitted_form() {
+                loadAttachments();
+            }
+        }
+
+        let file_form_ajax = new FileFormAjaxSubmit();
+        let file_form_modal = $('#fileFormModal');
+
+        function loadAttachments() {
+            load_attachments_spin.show();
+            $('#attachments').load(
+                "{% url 'dashboard:grm:issue_attachments' doc.auto_increment_id %}?column=1", function (
+                    response, status, xhr) {
+                    if (status === "error") {
+                        alert(error_server_message + "Error " + response.status);
+                    }
+                    load_attachments_spin.hide();
+                    $('#add_attachment').click(function () {
+                        let url = "{% url 'dashboard:grm:upload_issue_attachment' doc.auto_increment_id %}";
+                        file_form_ajax.load_form('#form', file_form_modal, url, false, true);
+                    });
+                });
+        }
+
+        $(document).ready(function () {
+            loadAttachments();
+            loadStatusButtons();
+            $('b[role="presentation"]').hide();
+            $('.select2-selection__arrow').append(
+                '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+        });
+
+        $(document).on('click', '.delete-attachment', function () {
+            $.ajax({
+                url: $(this).data('url'),
+                type: 'POST'
+            })
+                .fail(function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                })
+                .done(function (data) {
+                    loadAttachments();
+                    showPopupMessage(data.msg);
+                })
+        });
+
+        let add_comment = $('#add_comment');
+        let load_comments_spin = $('#load-comments-spin');
+        load_comments_spin.hide();
+        let comment = $('#id_comment');
+
+        function loadComments() {
+            load_comments_spin.show();
+            $('#comments').load("{% url 'dashboard:grm:issue_comments' doc.auto_increment_id %}", function (
+                response, status, xhr) {
+                if (status === "error") {
+                    alert(error_server_message + "Error " + response.status);
+                }
+                load_comments_spin.hide();
+            });
+        }
+
+        add_comment.click(function () {
+            $.ajax({
+                type: "POST",
+                url: "{% url 'dashboard:grm:add_comment_to_issue' doc.auto_increment_id %}",
+                data: {
+                    "comment": comment.val(),
+                },
+                success: function (response) {
+                    showPopupMessage(response.msg);
+                    loadComments();
+                    comment.val('');
+                    add_comment.prop('disabled', true);
+                },
+                error: function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                }
+            });
+        });
+
+        comment.on('keyup', function () {
+            if ($(this).val().trim()) {
+                add_comment.prop('disabled', false);
+            } else {
+                add_comment.prop('disabled', true);
+            }
+        });
+
+        $(".show-data").click(function () {
+            $('#checkPasswordModal').modal('show');
+        });
+
+        $("#check-password").click(function () {
+            $.ajax({
+                type: "POST",
+                url: "{% url 'dashboard:grm:get_sensitive_issue_data' %}",
+                data: {
+                    "password": $("#id_password").val(),
+                    "id": "{{ doc|get:'_id' }}",
+                },
+                success: function (response) {
+                    showPopupMessage(response.msg);
+                    let data = response.data;
+                    if (data && data.citizen) {
+                        $("#citizen").html(data.citizen);
+                    }
+                    $('#checkPasswordModal').modal('hide')
+                },
+                error: function (data) {
+                    alert(error_server_message + "Error " + data.status);
+                }
+            });
+        });
+
+    </script>
+{% endblock javascript %}

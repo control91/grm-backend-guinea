@@ -1,0 +1,62 @@
+{% load custom_tags i18n %}
+
+
+<div class="modal-body task-detail hidden" id="task-{{ phase.ordinal }}-{{ task.ordinal }}">
+    <div class="row">
+        <div class="col-12">
+            <div class="show-phase link">
+                <i class="fa fa-chevron-left text-primary mr-1 fs16"></i>
+                <span class="text-bold-family fs14">{% translate "Go to the phase" %}</span>
+            </div>
+
+            <div class="text-bold-family mt-4 mb-2">{% translate "Estimated Date" %}</div>
+            <div class="badge-task-detail navbar-white">
+                <i class="far fa-calendar-alt text-warning mr-2"></i>
+                {% translate "indefinite date" as undefined %}
+                {{ task.due_at|string_to_date|date:'M Y'|default:undefined }}
+            </div>
+            <div class="task-title mt-4">
+                {{ task.ordinal }}. {{ task.title }}
+            </div>
+            <p class="lh14 fs14 mt-2">
+                {{ task.description }}
+            </p>
+
+            <div class="text-bold-family mt-3 mb-2">{% translate "Status" %}</div>
+            <div class="badge-task-detail badge-{{ task.status }} text-white">
+                {% if task.status == 'completed' %}
+                    {% translate 'Completed' %}
+                {% elif task.status == 'in-progress' %}
+                    {% translate 'In progress' %}
+                {% else %}
+                    {% translate 'Pending' %}
+                {% endif %}
+                <i class="far fa-clock pull-right mr-2"></i>
+            </div>
+
+            <div class="text-bold-family mt-3 mb-2">{% translate "Attachments" %}</div>
+            {% for attachment in task.attachments %}
+                <a class="link-attachment mt-2" href="{{ attachment.url }}"
+                   target="_blank">
+                    <i class="fas fa-paperclip mr-2"></i>
+                    {{ attachment.name }}
+                </a>
+            {% empty %}
+                {% translate "No attachments" %}
+            {% endfor %}
+
+            <div class="text-bold-family mt-3 mb-2">{% translate "Notes" %}</div>
+            {% translate "No notes" as no_notes %}
+            <p>
+                {{ task.notes|default:no_notes }}
+            </p>
+
+            {%  with task.location.coords as coords %}
+                {% if coords.longitude != None and coords.latitude != None %}
+                    <div class="text-bold-family mt-3 mb-2">{% translate "Location" %}</div>
+                    <div id="map-task-{{ phase.ordinal }}-{{ task.ordinal }}" class="ol-map"></div>
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>

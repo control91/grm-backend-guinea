@@ -1,0 +1,234 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row issues-filter">
+                        <div class="col-4 text-left">
+                            <div class="fs28 lh35 text-primary text-bold-family mb-4">
+                                {% translate 'Search Results' %}<br>
+                            </div>
+                            <div class="row mr-5">
+                                <div class="col-12">
+                                    {% bootstrap_field form.start_date layout='horizontal' %}
+                                    {% bootstrap_field form.end_date layout='horizontal' %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-8 border-left">
+                            <div class="row">
+                                <div class="col-2">
+                                    <label class="label-align">{% translate 'Filter by' %}</label>
+                                </div>
+                                <div class="col-5">
+                                    {% bootstrap_field form.code show_label=False %}
+                                    {% if not user.governmentworker %}
+                                        {% bootstrap_field form.assigned_to show_label=False %}
+                                    {% endif %}
+                                    {% bootstrap_field form.category show_label=False %}
+                                </div>
+                                <div class="col-5">
+                                    {% bootstrap_field form.type show_label=False %}
+                                    {% bootstrap_field form.status show_label=False %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a class="btn fs12 text-bold-family text-primary pull-right p-0"
+                       id="clear_all_filters">
+                        {% translate "Clear all filters" %}
+                    </a>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body table-responsive">
+                    <div id="issue-list"></div>
+                    <div class="text-right">
+                        <a id="previous" class="btn text-primary hidden">
+                            <i class="fa fa-chevron-left fs20 align-middle"></i>
+                        </a>
+                        <div id="current-page" class="d-inline-block fs14 text-regular-family ml-4 mr-4"></div>
+                        <a id="next" class="btn text-primary hidden">
+                            <i class="fa fa-chevron-right fs20 align-middle"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="overlay" id="spin">
+                    <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+
+    <script type="text/javascript">
+        let spin = $('#spin');
+        let index = 0;
+        const offset = 10;
+        let previous = $('#previous');
+        let next = $('#next');
+        let issues = $('#issue-list');
+        let total_issues = 0;
+        let current_page = $('#current-page');
+        let start_date = $('#id_start_date');
+        let end_date = $('#id_end_date');
+        let code = $('#id_code');
+        let assigned_to = $('#id_assigned_to');
+        let category = $('#id_category');
+        let type = $('#id_type');
+        let status = $('#id_status');
+
+        function loadIssues() {
+            spin.show();
+            $.ajax({
+                type: "GET",
+                url: "{% url 'dashboard:grm:issue_list' %}",
+                data: {
+                    index: index,
+                    offset: offset,
+                    start_date: start_date.val(),
+                    end_date: end_date.val(),
+                    code: code.val(),
+                    assigned_to: assigned_to.val(),
+                    category: category.val(),
+                    type: type.val(),
+                    status: status.val(),
+                },
+                success: function (response) {
+                    spin.hide();
+                    if (index - offset >= 0) {
+                        previous.show();
+                    } else {
+                        previous.hide();
+                    }
+                    if (index + offset < total_issues) {
+                        next.show();
+                    } else {
+                        next.hide();
+                    }
+                    issues.html(response);
+                    if (response.trim()) {
+                        current_page.html(Math.floor(index / offset) + 1 + " / " + Math.ceil(total_issues / offset));
+                    } else {
+                        current_page.html("")
+                    }
+                },
+                error: function (data) {
+                    spin.hide();
+                    alert(error_server_message + "Error rrrr " + data.status);
+                    current_page.html("");
+                }
+            });
+        }
+
+        function setTotalIssues() {
+            $.ajax({
+                type: "GET",
+                url: "{% url 'dashboard:couchdb_proxy:issues_statistics' %}",
+                success: function (response) {
+                    total_issues = response['count'];
+                    loadIssues();
+                },
+                error: function (data) {
+                    console.log(data)
+                    alert(error_server_message + "Error rrrrr " + data.status);
+                }
+            });
+        }
+
+        previous.click(function () {
+            index -= offset;
+            loadIssues();
+        });
+
+        next.click(function () {
+            index += offset;
+            loadIssues();
+        });
+
+        setTotalIssues();
+
+        let dp1 = '<div class="input-group-prepend" data-target="#{id}" data-toggle="datetimepicker">' +
+            '<div class="input-group-text"><i class="fa fa-calendar text-primary"></i></div></div>';
+        let dp2 = '<div class="input-group date" id="{id}" data-target-input="nearest"></div>';
+        $('#id_start_date').before(dp1.replace('{id}', 'start_date')).parent().wrapInner(
+            dp2.replace('{id}', 'start_date'));
+        $('#id_end_date').before(dp1.replace('{id}', 'end_date')).parent().wrapInner(
+            dp2.replace('{id}', 'end_date'));
+
+        //Datemask dd/mm/yyyy
+        $('.datetimepicker-input').inputmask({alias: "datetime", inputFormat: "dd/mm/yyyy"});
+
+        let options = {
+            maxDate: Date.now(),
+            useCurrent: false,
+            format: "DD/MM/YYYY",
+            widgetPositioning: {
+                vertical: 'bottom',
+            }
+        };
+
+        function dateChanged(e) {
+            if (e.oldDate !== e.date) {
+                loadIssues();
+            }
+        }
+
+        $('#start_date').datetimepicker(options);
+        $('#start_date').on("change.datetimepicker", dateChanged);
+        $('#end_date').datetimepicker(options);
+        $('#end_date').on("change.datetimepicker", dateChanged);
+        $('.issues-filter input').on('change keyup', function () {
+            if (!$(this).val()) {
+                loadIssues();
+            }
+        });
+        code.on('change keyup', delay(function () {
+            if ($(this).val()) {
+                loadIssues();
+            }
+        }, 500));
+        $('.issues-filter select').on('change', function () {
+            loadIssues();
+        });
+
+        $("#clear_all_filters").on("click", function () {
+            $('.issues-filter input').val('');
+            $('.issues-filter select').val(null).trigger('change.select2');
+            loadIssues();
+        });
+
+    </script>
+{% endblock %}
+
+{% block select2 %}
+    <script type="text/javascript">
+        $("#id_assigned_to").select2({
+            placeholder: "{% translate 'Assigned to' %}",
+            allowClear: true
+        });
+        $("#id_category").select2({
+            placeholder: "{% translate 'Category' %}",
+            allowClear: true
+        });
+        $("#id_type").select2({
+            placeholder: "{% translate 'Type' %}",
+            allowClear: true,
+        });
+        $("#id_status").select2({
+            placeholder: "{% translate 'Status' %}",
+            allowClear: true,
+        });
+
+        $('b[role="presentation"]').hide();
+        $('.select2-selection__arrow').append(
+            '<i class="fas fa-chevron-circle-down text-primary" style="margin-top:12px;"></i>');
+
+    </script>
+{% endblock select2 %}

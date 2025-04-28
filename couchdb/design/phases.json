@@ -1,0 +1,10 @@
+{
+  "_id": "_design/phases",
+  "views": {
+    "tasks_by_month": {
+      "map": "function (doc) {\n  if(doc.type == 'adl') {\n    doc.phases.forEach(function(phase){\n        let completed_tasks = 0;\n        let tasks = phase.tasks.length;\n        for(let i=0; i < tasks; ++i) {\n          if(phase.tasks[i].status === \"completed\"){\n            completed_tasks++;\n          }\n        }\n        let date = phase.closed_at;\n        if(!date) {\n          date = phase.opened_at;\n        }\n        let d = new Date(date);\n        emit([d.getFullYear(), d.getMonth() + 1, phase.title], \n        [completed_tasks, tasks]);\n    });\n  }\n}",
+      "reduce": "_sum"
+    }
+  },
+  "language": "javascript"
+}

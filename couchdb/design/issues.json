@@ -1,0 +1,18 @@
+{
+  "_id": "_design/issues",
+  "views": {
+    "auto_increment_id_stats": {
+      "reduce": "_stats",
+      "map": "function (doc) {\n  if(doc.type == 'issue' && doc.auto_increment_id) {\n    emit(doc._id, doc.auto_increment_id);\n  }\n}"
+    },
+    "by_assignee_stats": {
+      "reduce": "_stats",
+      "map": "function (doc) {\n  if(doc.type == 'issue' && doc.confirmed) {\n    let assignee = 0;\n    if (doc.assignee) {\n      assignee = doc.assignee.id;\n    }\n    emit(assignee, 1);\n  }\n}"
+    },
+    "group_by_assignee": {
+      "reduce": "_count",
+      "map": "function (doc) {\n  if(doc.type == 'issue' && doc.confirmed && doc.status.name != 'Closed' && doc.assignee && doc.category) {\n    emit([doc.category.assigned_department, doc.assignee.id, doc.assignee.name]);\n  }\n}"
+    }
+  },
+  "language": "javascript"
+}

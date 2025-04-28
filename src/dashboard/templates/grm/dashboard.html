@@ -1,0 +1,77 @@
+{% extends 'layouts/base.html' %}
+{% load bootstrap4 static i18n %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <img src="{% static 'images/bg-right-waves.png' %}" class="bg-right-waves"/>
+                <div class="card-body mt-5 ml-5">
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <div class="fs44 lh46 text-primary text-bold-family">
+                                {% translate 'Resources & Announcements' %}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="fs20 lh27">
+                                {% blocktranslate trimmed %}
+                                    - We have added new codes for classifying issues. Click here for more information.
+                                {% endblocktranslate %}
+                                <br><br>
+                                {% blocktranslate trimmed %}
+                                    - We’re getting great feedback! Click here to see some articles about how well our
+                                    work is being received.
+                                {% endblocktranslate %}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <div class="white-shaded-style text-right">
+                                <form id='enter-issue-form' action="{% url 'dashboard:grm:start_new_issue' %}"
+                                      method="post">{% csrf_token %}
+                                    <div class="text-box">
+                                        {% translate 'ENTER NEW ISSUES' %}
+                                    </div>
+                                    <a href='#' id='enter-issue' class="btn btn-outline-primary">
+                                        <i class="fa fa-chevron-right align-bottom"></i>
+                                    </a>
+                                </form>
+                                <div>
+                                    <div class="text-box">
+                                        {% translate 'REVIEW ISSUES' %}
+                                    </div>
+                                    <a href="{% url 'dashboard:grm:review_issues' %}" class="btn btn-outline-primary">
+                                        <i class="fa fa-chevron-right align-bottom"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+{#                    <div class="row">#}
+{#                        <div class="col-6">#}
+{#                            <div class="text-bold-family fs20 mt-5">{% translate 'Problems?' %}</div>#}
+{#                            <button class="btn btn-primary btn-sm mt-3 rounded-xl">#}
+{#                                {% translate 'CLICK HERE FOR HELP!' %}#}
+{#                            </button>#}
+{#                        </div>#}
+{#                        <div class="col-6">#}
+{#                        </div>#}
+{#                    </div>#}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $('#enter-issue').on("click", function () {
+            $("#enter-issue-form").submit();
+        });
+    </script>
+{% endblock javascript %}
